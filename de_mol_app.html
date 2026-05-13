@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>De Mol</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --mol-green: #00e5a0;
+    --mol-red: #e5001e;
+    --mol-dark: #080f0c;
+    --mol-card: #0d1a14;
+  }
+  html, body {
+    height: 100%; background: var(--mol-dark); color: #fff;
+    font-family: 'Barlow', sans-serif; overflow: hidden;
+    touch-action: manipulation;
+  }
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px; gap: 0;
+  }
+  #overlay {
+    position: fixed; inset: 0; pointer-events: none;
+    z-index: 100; opacity: 0; transition: opacity 0.05s;
+  }
+  #overlay.green { background: rgba(0,229,160,0.18); opacity: 1; }
+  #overlay.red   { background: rgba(229,0,30,0.22);  opacity: 1; }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 14vw, 70px);
+    letter-spacing: 0.12em; color: var(--mol-green);
+    text-shadow: 0 0 40px rgba(0,229,160,0.35);
+    user-select: none; margin-bottom: 2px;
+  }
+  .subtitle {
+    font-size: 10px; font-weight: 300; letter-spacing: 0.35em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3);
+    margin-bottom: 20px;
+  }
+  .state-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; width: min(340px, 90vw); margin-bottom: 10px;
+  }
+  .state-btn {
+    padding: 14px 8px; border-radius: 10px;
+    border: 1px solid rgba(0,229,160,0.2);
+    background: var(--mol-card);
+    cursor: pointer; color: rgba(255,255,255,0.55);
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .state-btn:active { transform: scale(0.96); }
+  .state-btn.active {
+    border-color: var(--mol-green);
+    background: rgba(0,229,160,0.1);
+    color: var(--mol-green);
+  }
+  .state-btn.active-red {
+    border-color: var(--mol-red);
+    background: rgba(229,0,30,0.1);
+    color: var(--mol-red);
+  }
+  .state-btn .icon { font-size: 18px; display: block; margin-bottom: 5px; }
+
+  .pause-btn {
+    width: min(340px, 90vw); padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.04);
+    cursor: pointer;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    margin-bottom: 10px;
+    opacity: 0.3; pointer-events: none;
+  }
+  .pause-btn:active { transform: scale(0.97); }
+  .pause-btn.enabled {
+    opacity: 1; pointer-events: auto;
+    color: rgba(255,255,255,0.7);
+    border-color: rgba(255,255,255,0.25);
+  }
+  .pause-btn.paused {
+    opacity: 1; pointer-events: auto;
+    color: var(--mol-green);
+    border-color: rgba(0,229,160,0.4);
+    background: rgba(0,229,160,0.06);
+  }
+
+  .divider {
+    width: min(340px, 90vw); height: 0.5px;
+    background: rgba(0,229,160,0.12); margin-bottom: 10px;
+  }
+  .rood-btn {
+    width: min(340px, 90vw); padding: 18px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(229,0,30,0.5);
+    background: rgba(229,0,30,0.07);
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.18em;
+    color: var(--mol-red); text-align: center;
+    transition: background 0.2s, opacity 0.3s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    opacity: 0.25; pointer-events: none;
+  }
+  .rood-btn:active { transform: scale(0.97); background: rgba(229,0,30,0.16); }
+  .rood-btn.enabled { opacity: 1; pointer-events: auto; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .playing-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--mol-green);
+    margin-left: 6px; vertical-align: middle;
+    animation: blink 1.2s ease-in-out infinite;
+    opacity: 0;
+  }
+  .playing-dot.on { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+
+<div class="logo">DE MOL</div>
+<div class="subtitle">Vlaanderen</div>
+
+<div class="state-grid">
+  <button class="state-btn" id="btn-intro" onclick="goState('intro')">
+    <span class="icon">🎬</span>Intro<span class="playing-dot" id="dot-intro"></span>
+  </button>
+  <button class="state-btn" id="btn-voor" onclick="goState('voor')">
+    <span class="icon">⏳</span>Voor eliminatie<span class="playing-dot" id="dot-voor"></span>
+  </button>
+  <button class="state-btn" id="btn-elim" onclick="goState('eliminatie')">
+    <span class="icon">💀</span>Eliminatie<span class="playing-dot" id="dot-elim"></span>
+  </button>
+  <button class="state-btn" id="btn-ween" onclick="goState('ween')">
+    <span class="icon">😢</span>Tranen<span class="playing-dot" id="dot-ween"></span>
+  </button>
+</div>
+
+<button class="pause-btn" id="pauseBtn" onclick="togglePause()">⏸ Pauze</button>
+
+<div class="divider"></div>
+
+<button class="rood-btn" id="roodBtn" onclick="playRood()">🔴 Rood scherm</button>
+
+<audio id="aGeneriek"  src="intro.mp3"                         loop></audio>
+<audio id="aIntro"     src="Eliminatie_intro.mp3"></audio>
+<audio id="aElimMusic" src="Eliminatie_music.mp3"              loop></audio>
+<audio id="aRood"      src="rood_scherm.mp3"></audio>
+<audio id="aSad"       src="sad_eind_muziek.mp3"               loop></audio>
+<audio id="aTijdens"   src="tijdens_eliminatie.mp3"            loop></audio>
+
+<script>
+const audios = {
+  generiek:  document.getElementById('aGeneriek'),
+  intro:     document.getElementById('aIntro'),
+  elimMusic: document.getElementById('aElimMusic'),
+  rood:      document.getElementById('aRood'),
+  sad:       document.getElementById('aSad'),
+  tijdens:   document.getElementById('aTijdens'),
+};
+
+// Rood scherm luider
+audios.rood.volume = 1.0;
+
+let currentState = null;
+let isPaused = false;
+let elimIntroPlayed = false;
+
+// Which audio elements are "background" per state (pauseable)
+const bgAudio = {
+  intro:      () => [audios.generiek],
+  voor:       () => [audios.tijdens],
+  eliminatie: () => elimIntroPlayed ? [audios.elimMusic] : [audios.intro],
+  ween:       () => [audios.sad],
+};
+
+function stopAll() {
+  for (const a of Object.values(audios)) { a.pause(); a.currentTime = 0; }
+  audios.intro.onended = null;
+  elimIntroPlayed = false;
+}
+
+function clearActive() {
+  document.querySelectorAll('.state-btn').forEach(b => b.className = 'state-btn');
+  document.querySelectorAll('.playing-dot').forEach(d => d.className = 'playing-dot');
+}
+
+function setActive(id, red=false) {
+  document.getElementById('btn-' + id).className = 'state-btn ' + (red ? 'active-red' : 'active');
+  document.getElementById('dot-' + id).className = 'playing-dot on';
+}
+
+function setPauseBtn(state) {
+  const btn = document.getElementById('pauseBtn');
+  if (state === 'disabled') {
+    btn.className = 'pause-btn';
+    btn.innerHTML = '⏸ Pauze';
+  } else if (state === 'enabled') {
+    btn.className = 'pause-btn enabled';
+    btn.innerHTML = '⏸ Pauze';
+  } else if (state === 'paused') {
+    btn.className = 'pause-btn paused';
+    btn.innerHTML = '▶ Hervat';
+  }
+}
+
+function flashOverlay(cls) {
+  const ov = document.getElementById('overlay');
+  ov.className = cls;
+  setTimeout(() => ov.className = '', 700);
+}
+
+function goState(state) {
+  stopAll();
+  clearActive();
+  currentState = state;
+  isPaused = false;
+  document.getElementById('roodBtn').className = 'rood-btn';
+  setPauseBtn('enabled');
+
+  if (state === 'intro') {
+    setActive('intro');
+
+    audios.generiek.play();
+  } else if (state === 'voor') {
+    setActive('voor');
+    audios.tijdens.play();
+  } else if (state === 'eliminatie') {
+    setActive('elim');
+    document.getElementById('roodBtn').className = 'rood-btn enabled';
+    elimIntroPlayed = false;
+    audios.intro.play();
+    audios.intro.onended = () => {
+      elimIntroPlayed = true;
+      audios.elimMusic.play();
+    };
+  } else if (state === 'ween') {
+    setActive('ween', true);
+    audios.sad.play();
+  }
+}
+
+function togglePause() {
+  if (!currentState) return;
+  const bg = bgAudio[currentState]();
+  if (!isPaused) {
+    bg.forEach(a => a.pause());
+    isPaused = true;
+    setPauseBtn('paused');
+    document.querySelectorAll('.playing-dot').forEach(d => d.style.animationPlayState = 'paused');
+  } else {
+    bg.forEach(a => a.play());
+    isPaused = false;
+    setPauseBtn('enabled');
+    document.querySelectorAll('.playing-dot').forEach(d => d.style.animationPlayState = 'running');
+  }
+}
+
+function playRood() {
+  if (!isPaused) {
+    togglePause();
+  }
+  audios.rood.currentTime = 0;
+  audios.rood.play();
+  flashOverlay('red');
+}
+</script>
+</body>
+</html>
