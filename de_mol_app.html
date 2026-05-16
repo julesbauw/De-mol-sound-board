@@ -150,6 +150,9 @@
   <button class="state-btn" id="btn-elim" onclick="goState('eliminatie')">
     <span class="icon">💀</span>Eliminatie<span class="playing-dot" id="dot-elim"></span>
   </button>
+  <button class="state-btn" id="btn-elim_intro" onclick="goState('elim_intro')">
+    <span class="icon">🎵</span>Eliminatie Intro<span class="playing-dot" id="dot-elim_intro"></span>
+  </button>
   <button class="state-btn" id="btn-ween" onclick="goState('ween')">
     <span class="icon">😢</span>Tranen<span class="playing-dot" id="dot-ween"></span>
   </button>
@@ -189,7 +192,8 @@ let elimIntroPlayed = false;
 const bgAudio = {
   intro:      () => [audios.generiek],
   voor:       () => [audios.tijdens],
-  eliminatie: () => elimIntroPlayed ? [audios.elimMusic] : [audios.intro],
+  eliminatie: () => [audios.elimMusic],
+  elim_intro:  () => [audios.intro],
   ween:       () => [audios.sad],
 };
 
@@ -247,12 +251,17 @@ function goState(state) {
   } else if (state === 'eliminatie') {
     setActive('elim');
     document.getElementById('roodBtn').className = 'rood-btn enabled';
+    audios.elimMusic.currentTime = 0;
+    audios.elimMusic.play();
+    audios.intro.onended = null;
     elimIntroPlayed = false;
+    
+  } else if (state === 'elim_intro') {
+    setActive('elim_intro');
+    // Keep the red button inactive during the eliminatie intro
+    document.getElementById('roodBtn').className = 'rood-btn';
+    audios.intro.currentTime = 0;
     audios.intro.play();
-    audios.intro.onended = () => {
-      elimIntroPlayed = true;
-      audios.elimMusic.play();
-    };
   } else if (state === 'ween') {
     setActive('ween', true);
     audios.sad.play();
